@@ -1,0 +1,51 @@
+# Archivos de compilación
+bin/
+obj/
+
+# Archivos de usuario de Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Archivos de configuración local
+*.dbmdl
+*.pdb
+*.cache
+*.log
+
+# Archivos de publicación
+publish/
+out/
+
+# Archivos de dependencias
+node_modules/
+wwwroot/lib/
+
+# Archivos de entorno
+.env
+*.env.*
+
+# Archivos de sistema
+Thumbs.db
+Desktop.ini
+
+# Archivos de Blazor WebAssembly
+wwwroot/dist/
+wwwroot/.vite/
+wwwroot/.cache/
+
+# Archivos de configuración de VS Code
+.vscode/
+
+# Archivos de test y cobertura
+TestResults/
+coverage/
+
+# Archivos de paquetes NuGet
+*.nupkg
+*.snupkg
+
+# Archivos generados por herramientas
+Generated_Code/
