@@ -1,0 +1,21 @@
+@page "/login"
+@using Client.Services
+@using Client.Models
+@inject AuthApiService AuthApiService
+@layout MainLayout
+
+<EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
+ <InputText @bind-Value="loginModel.Username" />
+ <InputText @bind-Value="loginModel.Password" type="password" />
+ <button type="submit">Iniciar Sesión</button>
+</EditForm>
+
+@code 
+{
+    LoginRequestDto loginModel = new LoginRequestDto();
+
+    async Task HandleLogin() 
+    {
+        var result = await AuthApiService.LoginAsync(loginModel);
+    }
+}
