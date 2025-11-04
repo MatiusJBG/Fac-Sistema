@@ -21,13 +21,12 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("PermitirCliente", policy =>
     {
-        policy.WithOrigins("https://localhost:5002") // Puerto del cliente
+        // Permitir el origen donde se ejecuta el cliente Blazor (ajustado a Client launchSettings)
+        policy.WithOrigins("http://localhost:5001", "https://localhost:5001")
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
 });
-
-app.UseCors("PermitirCliente");
 
 var app = builder.Build();
 
@@ -47,6 +46,9 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
+// Aplicar CORS después de construir la app y después de UseRouting
+app.UseCors("PermitirCliente");
 
 app.MapRazorPages();
 app.MapControllers();
