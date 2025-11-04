@@ -4,6 +4,18 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("PermitirCliente", policy =>
+    {
+        policy.WithOrigins("https://localhost:5002") // Puerto del cliente
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+app.UseCors("PermitirCliente");
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
