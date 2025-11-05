@@ -1,21 +1,25 @@
-using System.Net.Http;
-using System.Net.Http.Json;
 using Client.Models;
+using System.Net.Http.Json;
 
 namespace Client.Services
 {
-    public class AuthApiService 
+    public class AuthApiService
     {
-        private readonly HttpClient _http;
-        public AuthApiService(HttpClient http) 
+        private readonly HttpClient _httpClient;
+
+        public AuthApiService(HttpClient httpClient)
         {
-            _http = http;
+            _httpClient = httpClient;
         }
 
-        public async Task<LoginResponseDto?> LoginAsync(LoginRequestDto dto)
+        public async Task<LoginResponseDto?> LoginAsync(LoginRequestDto loginRequest)
         {
-            var response = await _http.PostAsJsonAsync("api/auth/login", dto);
-            return await response.Content.ReadFromJsonAsync<LoginResponseDto>();
+            var response = await _httpClient.PostAsJsonAsync("api/auth/login", loginRequest);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<LoginResponseDto>();
+            }
+            return null;
         }
     }
 }

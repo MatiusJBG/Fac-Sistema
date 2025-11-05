@@ -1,20 +1,43 @@
 @page "/login"
-@using Client.Services
 @using Client.Models
+@using Client.Services
+@layout LoginLayout
 @inject AuthApiService AuthApiService
-@layout MainLayout
+@inject NavigationManager NavigationManager
 
-<EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
-    <InputText @bind-Value="loginModel.Username" />
-    <InputText @bind-Value="loginModel.Password" type="password" />
-    <button type="submit">Iniciar Sesión</button>
-</EditForm>
+<div class="login-main">
+    <div class="login-container">
+    <h2>Iniciar Sesión</h2>
+   <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
+<div class="form-group">
+    <label for="username">Usuario</label>
+     <InputText id="username" @bind-Value="loginModel.Username" class="form-control" />
+   </div>
+    <div class="form-group">
+               <label for="password">Contraseña</label>
+   <InputText id="password" @bind-Value="loginModel.Password" type="password" class="form-control" />
+          </div>
+ <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
+        </EditForm>
+    </div>
+</div>
 
 @code {
     private LoginRequestDto loginModel = new();
 
     private async Task HandleLogin()
     {
-        var result = await AuthApiService.LoginAsync(loginModel);
+      try
+        {
+            var result = await AuthApiService.LoginAsync(loginModel);
+            if (result != null)
+ {
+              NavigationManager.NavigateTo("/");
+            }
+   }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
     }
 }
