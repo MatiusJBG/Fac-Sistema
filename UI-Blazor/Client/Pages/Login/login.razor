@@ -5,16 +5,15 @@
 @layout MainLayout
 
 <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
- <InputText @bind-Value="loginModel.Username" />
- <InputText @bind-Value="loginModel.Password" type="password" />
- <button type="submit">Iniciar Sesión</button>
+    <InputText @bind-Value="loginModel.Username" />
+    <InputText @bind-Value="loginModel.Password" type="password" />
+    <button type="submit">Iniciar Sesión</button>
 </EditForm>
 
-@code 
-{
-    LoginRequestDto loginModel = new LoginRequestDto();
+@code {
+    private LoginRequestDto loginModel = new();
 
-    async Task HandleLogin() 
+    private async Task HandleLogin()
     {
         var result = await AuthApiService.LoginAsync(loginModel);
     }

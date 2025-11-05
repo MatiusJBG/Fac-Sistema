@@ -1,11 +1,14 @@
 @inherits LayoutComponentBase
+@namespace Client.Layout
 
 <div class="main-layout">
     <header>
         <h1>Mi Aplicación</h1>
     </header>
 
-    <div class="body">
-        @Body
-    </div>
+    <main>
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
 </div>
