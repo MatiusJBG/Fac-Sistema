@@ -1,0 +1,108 @@
+/* ------------------------------------------- */
+/* 1. Variables & Reset (Base del Layout) */
+/* ------------------------------------------- */
+:root {
+    --primary: #667eea;
+    --primary-dark: #764ba2;
+    --error: #dc2626;
+    --error-bg: rgba(239, 68, 68, 0.1);
+    --text-primary: #1a202c;
+    --text-secondary: #718096;
+    --border: #e5e7eb;
+    --input-focus: rgba(102, 126, 234, 0.1);
+}
+
+/* Reset de márgenes/paddings */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ------------------------------------------- */
+/* 2. Login Layout */
+/* ------------------------------------------- */
+.login-layout {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden; /* Evita que las formas desbordadas creen scrollbars */
+}
+
+/* Fondo degradado y animaciones */
+.login-background {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    z-index: 0;
+}
+
+.shape {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.3;
+    animation: float 20s ease-in-out infinite;
+}
+
+.shape-1 {
+    width: 400px;
+    height: 400px;
+    background: rgba(255, 255, 255, 0.3);
+    top: -200px;
+    left: -200px;
+}
+
+.shape-2 {
+    width: 500px;
+    height: 500px;
+    background: rgba(255, 255, 255, 0.2);
+    bottom: -250px;
+    right: -250px;
+    animation-delay: -5s;
+}
+
+.shape-3 {
+    width: 300px;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.25);
+    top: 50%;
+    right: 10%;
+    animation-delay: -10s;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    33% {
+        transform: translate(30px, -50px) scale(1.1);
+    }
+
+    66% {
+        transform: translate(-20px, 20px) scale(0.9);
+    }
+}
+
+/* Contenedor principal para el contenido del login */
+.login-main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    position: relative;
+    z-index: 1; /* Asegura que el contenido esté sobre el fondo */
+}
+
+/* Pie de página global del layout */
+.login-footer-global {
+    text-align: center;
+    padding: 20px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+    position: relative;
+    z-index: 1;
+}
