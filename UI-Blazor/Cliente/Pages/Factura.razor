@@ -1,0 +1,334 @@
+@page "/factura"
+@using Microsoft.AspNetCore.Components.Forms
+
+@* Estilos locales para mejorar apariencia sin tocar archivos globales *@
+<style>
+    .factura-container { max-width: 1200px; margin: 0 auto; }
+    .card-compact { border-radius: .6rem; box-shadow: 0 6px 18px rgba(0,0,0,0.06); }
+    .totals-card { position: sticky; top: 80px; }
+    .section-title { font-size: 1.05rem; font-weight: 600; }
+    .small-muted { font-size: .85rem; color: #6c757d; }
+    .action-btns .btn { min-width: 110px; }
+    .input-sm { height: calc(1.5em + .5rem + 2px); }
+</style>
+
+<div class="container-fluid mt-4 factura-container">
+    <EditForm Model="@facturaModel" OnValidSubmit="@GuardarFactura">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <!-- Header / Breadcrumb -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h2 class="mb-1">Nueva Factura</h2>
+                <div class="small-muted">Cree y administre facturas rápidamente</div>
+            </div>
+            <div>
+                <small class="text-muted">Fecha: @facturaModel.FechaEmision.ToString("dd/MM/yyyy")</small>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Left: formulario principal -->
+            <div class="col-lg-8">
+                <!-- Encabezado -->
+                <div class="card card-compact mb-3">
+                    <div class="card-body">
+                        <div class="row gy-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Fecha de Emisión</label>
+                                <InputDate @bind-Value="facturaModel.FechaEmision" class="form-control input-sm" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Establecimiento</label>
+                                <select class="form-select" @bind="facturaModel.Establecimiento">
+                                    <option value="">Seleccione...</option>
+                                    <option value="001">001 - CAMINO</option>
+                                    <option value="002">002 - CENTRO</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Punto de Venta</label>
+                                <select class="form-select" @bind="facturaModel.PuntoVenta">
+                                    <option value="">Seleccione...</option>
+                                    @if (facturaModel.Establecimiento == "001")
+                                    {
+                                        <option value="001">001</option>
+                                        <option value="002">002</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Cliente</label>
+                                <div class="input-group">
+                                    <InputText @bind-Value="facturaModel.Cliente" class="form-control" placeholder="Buscar por nombre o RUC" />
+                                    <button class="btn btn-outline-secondary" type="button" @onclick="BuscarCliente" title="Buscar cliente">
+                                        <i class="bi bi-search"></i>
+                                    </button>
+                                </div>
+                                <div class="small-muted mt-1">Presione la lupa para abrir búsqueda de clientes</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Productos -->
+                <div class="card card-compact mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="section-title">Productos</div>
+                            <div>
+                                <button type="button" class="btn btn-outline-primary" @onclick="AgregarProducto">
+                                    <i class="bi bi-plus-lg me-1"></i> Agregar Producto
+                                </button>
+                            </div>
+                        </div>
+
+                        @if (!facturaModel.Productos.Any())
+                        {
+                            <div class="alert alert-secondary py-3">No hay productos agregados. Use "Agregar Producto" para comenzar.</div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Código</th>
+                                            <th>Descripción</th>
+                                            <th class="text-end">Cantidad</th>
+                                            <th class="text-end">Precio</th>
+                                            <th class="text-end">Total</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var producto in facturaModel.Productos)
+                                        {
+                                            <tr>
+                                                <td>@producto.Codigo</td>
+                                                <td>@producto.Descripcion</td>
+                                                <td class="text-end">@producto.Cantidad</td>
+                                                <td class="text-end">@producto.Precio.ToString("C2")</td>
+                                                <td class="text-end">@((producto.Cantidad * producto.Precio).ToString("C2"))</td>
+                                                <td class="text-end">
+                                                    <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Forma de Pago & Plazo -->
+                <div class="row">
+                    <div class="col-md-7">
+                        <div class="card card-compact mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="section-title">Forma de Pago</div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" @onclick="AgregarFormaDePago">
+                                        <i class="bi bi-plus"></i>
+                                    </button>
+                                </div>
+                                <div class="row gy-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Tipo de Pago</label>
+                                        <select class="form-select" @bind="facturaModel.TipoPago">
+                                            <option value="">Seleccione...</option>
+                                            <option value="SIN_UTILIZACION">SIN UTILIZACIÓN</option>
+                                            <option value="EFECTIVO">EFECTIVO</option>
+                                            <option value="TARJETA">TARJETA</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Valor</label>
+                                        <div class="input-group">
+                                            <InputNumber @bind-Value="facturaModel.ValorPago" class="form-control" />
+                                            <span class="input-group-text">$</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-5">
+                        <div class="card card-compact mb-3">
+                            <div class="card-body">
+                                <div class="section-title">Plazo del Pago</div>
+                                <div class="row gy-2 mt-2">
+                                    <div class="col-6">
+                                        <InputNumber @bind-Value="facturaModel.PlazoPago" class="form-control" />
+                                    </div>
+                                    <div class="col-6">
+                                        <select class="form-select" @bind="facturaModel.UnidadTiempo">
+                                            <option value="">Unidad</option>
+                                            <option value="dias">Días</option>
+                                            <option value="semanas">Semanas</option>
+                                            <option value="meses">Meses</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información Adicional -->
+                <div class="card card-compact mb-3">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="section-title">Información Adicional</div>
+                            <div class="small-muted">Campos libres para notas o instrucciones.</div>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary" @onclick="AgregarInfoAdicional">
+                            <i class="bi bi-plus"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Acción principal -->
+                <div class="d-flex justify-content-end gap-2 action-btns mb-5">
+                    <button type="button" class="btn btn-danger" @onclick="BorrarFactura">
+                        <i class="bi bi-trash me-1"></i> Borrar
+                    </button>
+                    <button type="button" class="btn btn-secondary" @onclick="GuardarFactura">
+                        <i class="bi bi-save me-1"></i> Guardar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-send me-1"></i> Enviar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right: Totales (sticky) -->
+            <div class="col-lg-4">
+                <div class="card card-compact totals-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h5 class="mb-0">Totales</h5>
+                                <div class="small-muted">Resumen</div>
+                            </div>
+                            <span class="badge bg-info text-dark">@facturaModel.Productos.Count items</span>
+                        </div>
+
+                        <dl class="row mb-0">
+                            <dt class="col-8 small-muted">Subtotal Base 0%</dt>
+                            <dd class="col-4 text-end">@facturaModel.SubtotalBase0.ToString("C2")</dd>
+
+                            <dt class="col-8 small-muted">Subtotal Base IVA</dt>
+                            <dd class="col-4 text-end">@facturaModel.SubtotalBaseIva.ToString("C2")</dd>
+
+                            <dt class="col-8 small-muted">Subtotal No Sujeto</dt>
+                            <dd class="col-4 text-end">@facturaModel.SubtotalNoSujeto.ToString("C2")</dd>
+
+                            <dt class="col-8 small-muted">Subtotal Exento</dt>
+                            <dd class="col-4 text-end">@facturaModel.SubtotalExento.ToString("C2")</dd>
+                        </dl>
+
+                        <hr />
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="fw-bold">Total</div>
+                            <div class="fs-5 fw-semibold">@(CalcularTotal().ToString("C2"))</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    // Modelo de la factura
+    private FacturaModel facturaModel = new();
+
+    // Métodos de acción principales
+    private void GuardarFactura()
+    {
+        // Simular guardado
+        Console.WriteLine("Guardando factura...");
+    }
+
+    private void EnviarFactura()
+    {
+        Console.WriteLine("Enviando factura...");
+    }
+
+    private void BorrarFactura()
+    {
+        Console.WriteLine("Borrando factura...");
+        facturaModel = new FacturaModel();
+    }
+
+    // Métodos para agregar elementos
+    private void AgregarProducto()
+    {
+        Console.WriteLine("Agregando producto...");
+        // Ejemplo: agregar un producto de ejemplo para visualizar la UI
+        facturaModel.Productos.Add(new ProductoModel { Codigo = "P001", Descripcion = "Producto ejemplo", Cantidad = 1, Precio = 10.00m });
+        RecalcularSubtotales();
+    }
+
+    private void AgregarFormaDePago()
+    {
+        Console.WriteLine("Agregando forma de pago...");
+    }
+
+    private void AgregarInfoAdicional()
+    {
+        Console.WriteLine("Agregando información adicional...");
+    }
+
+    private void BuscarCliente()
+    {
+        Console.WriteLine("Buscando cliente...");
+    }
+
+    // Recalcula subtotales simples (simulación)
+    private void RecalcularSubtotales()
+    {
+        facturaModel.SubtotalBase0 = 0m;
+        facturaModel.SubtotalBaseIva = facturaModel.Productos.Sum(p => p.Cantidad * p.Precio);
+        facturaModel.SubtotalNoSujeto = 0m;
+        facturaModel.SubtotalExento = 0m;
+    }
+
+    private decimal CalcularTotal()
+    {
+        return facturaModel.SubtotalBase0 + facturaModel.SubtotalBaseIva + facturaModel.SubtotalNoSujeto + facturaModel.SubtotalExento;
+    }
+
+    // Clase modelo para la factura
+    private class FacturaModel
+    {
+        public DateTime FechaEmision { get; set; } = DateTime.Now;
+        public string Establecimiento { get; set; } = "";
+        public string PuntoVenta { get; set; } = "";
+        public string Cliente { get; set; } = "";
+        public List<ProductoModel> Productos { get; set; } = new();
+        public string TipoPago { get; set; } = "";
+        public decimal ValorPago { get; set; }
+        public int PlazoPago { get; set; }
+        public string UnidadTiempo { get; set; } = "";
+        public decimal SubtotalBase0 { get; set; }
+        public decimal SubtotalBaseIva { get; set; }
+        public decimal SubtotalNoSujeto { get; set; }
+        public decimal SubtotalExento { get; set; }
+    }
+
+    // Clase modelo para productos
+    private class ProductoModel
+    {
+        public string Codigo { get; set; } = "";
+        public string Descripcion { get; set; } = "";
+        public int Cantidad { get; set; }
+        public decimal Precio { get; set; }
+    }
+}
