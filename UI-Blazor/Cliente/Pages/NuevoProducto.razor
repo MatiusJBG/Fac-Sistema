@@ -11,7 +11,7 @@
             <ValidationSummary />
 
             <div class="form-group">
-                <label for="tipPro">Tipo de Producto</label>
+                <label for="tipPro">Tipo de Producto *</label>
                 <InputSelect id="tipPro" @bind-Value="NuevoProductoModel.Tip_Pro" class="form-control">
                     <option value="">Seleccionar...</option>
                     <option value="Alimento">Alimento</option>
@@ -23,31 +23,40 @@
             </div>
 
             <div class="form-group">
-                <label for="nomPro">Nombre de Producto</label>
+                <label for="nomPro">Nombre de Producto *</label>
                 <InputText id="nomPro" @bind-Value="NuevoProductoModel.Nom_Pro" class="form-control" placeholder="Ingrese el nombre del producto" />
             </div>
 
             <div class="form-group">
-                <label for="fecExpPro">Fecha de Expiración</label>
+                <label for="fecExpPro">Fecha de Expiración *</label>
                 <InputDate id="fecExpPro" @bind-Value="NuevoProductoModel.Fec_Exp_Pro" class="form-control" />
             </div>
 
             <div class="form-group">
-                <label for="canPro">Cantidad</label>
-                <InputNumber id="canPro" @bind-Value="NuevoProductoModel.Can_Pro" class="form-control" min="1" placeholder="0" />
+                <label for="canPro">Cantidad *</label>
+                <InputNumber id="canPro" 
+                             @bind-Value="NuevoProductoModel.Can_Pro" 
+                             class="form-control" 
+                             min="0" 
+                             placeholder="0" />
+                <small class="text-muted">Debe ser mayor o igual a 0</small>
             </div>
 
             <div class="form-group">
-                <label for="preUni">Precio Unitario</label>
-                <InputNumber id="preUni" @bind-Value="NuevoProductoModel.Pre_Uni" class="form-control" step="0.01" min="0" placeholder="0.00" />
+                <label for="preUni">Precio Unitario *</label>
+                <InputNumber id="preUni" 
+                             @bind-Value="NuevoProductoModel.Pre_Uni" 
+                             class="form-control" 
+                             step="0.01" 
+                             min="0.01" 
+                             placeholder="0.00" />
+                <small class="text-muted">Debe ser mayor a 0</small>
             </div>
         </EditForm>
     </div>
 </div>
 
-
 @using Application.DTOs
-
 @using UI.Blazor.Cliente.Models
 
 @code {
