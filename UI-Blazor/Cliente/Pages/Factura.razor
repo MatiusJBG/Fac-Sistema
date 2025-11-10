@@ -1,5 +1,11 @@
 @page "/factura"
 @using Microsoft.AspNetCore.Components.Forms
+@using Application.DTOs
+@using Cliente.Services
+@inject IFacturaService FacturaService
+@inject IClienteService ClienteService
+@inject IProductoService ProductoService
+@inject NavigationManager NavigationManager
 
 @* Estilos locales para mejorar apariencia sin tocar archivos globales *@
 <style>
@@ -12,8 +18,17 @@
     .input-sm { height: calc(1.5em + .5rem + 2px); }
 </style>
 
+<!-- Mensaje de estado -->
+@if (!string.IsNullOrEmpty(mensaje))
+{
+    <div class="alert alert-@tipoMensaje alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999; width: 400px;">
+        @mensaje
+        <button type="button" class="btn-close" @onclick="() => mensaje = string.Empty"></button>
+    </div>
+}
+
 <div class="container-fluid mt-4 factura-container">
-    <EditForm Model="@facturaModel" OnValidSubmit="@GuardarFactura">
+    <EditForm Model="@facturaModel" OnValidSubmit="@EnviarFactura">
         <DataAnnotationsValidator />
         <ValidationSummary />
 
@@ -61,12 +76,38 @@
                             <div class="col-12">
                                 <label class="form-label">Cliente</label>
                                 <div class="input-group">
-                                    <InputText @bind-Value="facturaModel.Cliente" class="form-control" placeholder="Buscar por nombre o RUC" />
-                                    <button class="btn btn-outline-secondary" type="button" @onclick="BuscarCliente" title="Buscar cliente">
-                                        <i class="bi bi-search"></i>
+                                    <InputText @bind-Value="terminoBusquedaCliente" 
+                                               class="form-control" 
+                                               placeholder="Buscar por nombre o cédula"
+                                               @onkeyup="ActualizarBusquedaCliente" />
+                                    <button type="button" class="btn btn-outline-secondary"
+                                            @onclick="LimpiarClienteSeleccionado"
+                                            style="display: @(clienteSeleccionadoTemp != null ? "block" : "none")">
+                                        <i class="bi bi-x"></i>
                                     </button>
                                 </div>
-                                <div class="small-muted mt-1">Presione la lupa para abrir búsqueda de clientes</div>
+                                
+                                @if (mostrarResultadosClientes && clientesFiltradosTemp.Any())
+                                {
+                                    <div class="list-group mt-2" style="max-height: 200px; overflow-y: auto;">
+                                        @foreach (var cli in clientesFiltradosTemp)
+                                        {
+                                            <button type="button" class="list-group-item list-group-item-action" 
+                                                    @onclick="() => SeleccionarClienteTemp(cli)">
+                                                <strong>@cli.Nom_Cli @cli.Ape_Cli</strong><br/>
+                                                <small>@cli.Ced_Cli - @cli.Tel_Cli</small>
+                                            </button>
+                                        }
+                                    </div>
+                                }
+
+                                @if (clienteSeleccionadoTemp != null)
+                                {
+                                    <div class="alert alert-info mt-2 py-2">
+                                        <strong>@clienteSeleccionadoTemp.Nom_Cli @clienteSeleccionadoTemp.Ape_Cli</strong><br/>
+                                        <small>Cédula: @clienteSeleccionadoTemp.Ced_Cli</small>
+                                    </div>
+                                }
                             </div>
                         </div>
                     </div>
@@ -78,7 +119,7 @@
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <div class="section-title">Productos</div>
                             <div>
-                                <button type="button" class="btn btn-outline-primary" @onclick="AgregarProducto">
+                                <button type="button" class="btn btn-outline-primary" @onclick="AbrirSelectorProductos">
                                     <i class="bi bi-plus-lg me-1"></i> Agregar Producto
                                 </button>
                             </div>
@@ -103,16 +144,21 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach (var producto in facturaModel.Productos)
+                                        @foreach (var (producto, index) in facturaModel.Productos.Select((x, i) => (x, i)))
                                         {
                                             <tr>
                                                 <td>@producto.Codigo</td>
                                                 <td>@producto.Descripcion</td>
-                                                <td class="text-end">@producto.Cantidad</td>
+                                                <td class="text-end">
+                                                    <InputNumber @bind-Value="producto.Cantidad" 
+                                                                 class="form-control form-control-sm" 
+                                                                 style="max-width: 80px;" 
+                                                                 @onchange="() => RecalcularSubtotales()" />
+                                                </td>
                                                 <td class="text-end">@producto.Precio.ToString("C2")</td>
                                                 <td class="text-end">@((producto.Cantidad * producto.Precio).ToString("C2"))</td>
                                                 <td class="text-end">
-                                                    <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                                    <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar" @onclick="() => EliminarProducto(index)">
                                                         <i class="bi bi-trash"></i>
                                                     </button>
                                                 </td>
@@ -198,10 +244,18 @@
                     <button type="button" class="btn btn-danger" @onclick="BorrarFactura">
                         <i class="bi bi-trash me-1"></i> Borrar
                     </button>
-                    <button type="button" class="btn btn-secondary" @onclick="GuardarFactura">
+                    <button type="button" class="btn btn-secondary" @onclick="GuardarFactura" disabled="@(enviando || !facturaModel.Productos.Any() || clienteSeleccionadoTemp == null)">
+                        @if (enviando)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
                         <i class="bi bi-save me-1"></i> Guardar
                     </button>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary" disabled="@(enviando || !facturaModel.Productos.Any() || clienteSeleccionadoTemp == null)">
+                        @if (enviando)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
                         <i class="bi bi-send me-1"></i> Enviar
                     </button>
                 </div>
@@ -220,23 +274,17 @@
                         </div>
 
                         <dl class="row mb-0">
-                            <dt class="col-8 small-muted">Subtotal Base 0%</dt>
-                            <dd class="col-4 text-end">@facturaModel.SubtotalBase0.ToString("C2")</dd>
+                            <dt class="col-8 small-muted">Subtotal</dt>
+                            <dd class="col-4 text-end">@CalcularSubtotal().ToString("C2")</dd>
 
-                            <dt class="col-8 small-muted">Subtotal Base IVA</dt>
-                            <dd class="col-4 text-end">@facturaModel.SubtotalBaseIva.ToString("C2")</dd>
-
-                            <dt class="col-8 small-muted">Subtotal No Sujeto</dt>
-                            <dd class="col-4 text-end">@facturaModel.SubtotalNoSujeto.ToString("C2")</dd>
-
-                            <dt class="col-8 small-muted">Subtotal Exento</dt>
-                            <dd class="col-4 text-end">@facturaModel.SubtotalExento.ToString("C2")</dd>
+                            <dt class="col-8 small-muted">IVA (15%)</dt>
+                            <dd class="col-4 text-end">@CalcularIVA().ToString("C2")</dd>
                         </dl>
 
                         <hr />
                         <div class="d-flex justify-content-between align-items-center">
                             <div class="fw-bold">Total</div>
-                            <div class="fs-5 fw-semibold">@(CalcularTotal().ToString("C2"))</div>
+                            <div class="fs-5 fw-semibold text-primary">@CalcularTotal().ToString("C2")</div>
                         </div>
                     </div>
                 </div>
@@ -245,35 +293,287 @@
     </EditForm>
 </div>
 
+<!-- Modal Selector de Productos -->
+@if (mostrarSelectorProductos)
+{
+    <div class="modal d-block" style="background-color: rgba(0,0,0,0.5);" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Seleccionar Producto</h5>
+                    <button type="button" class="btn-close" @onclick="CerrarSelectorProductos"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <input type="text" class="form-control" placeholder="Buscar producto..." 
+                               @bind="terminoBusquedaProducto" />
+                    </div>
+
+                    @if (!productosDisponibles.Any())
+                    {
+                        <div class="alert alert-info">No hay productos disponibles</div>
+                    }
+                    else
+                    {
+                        <div class="row g-2" style="max-height: 400px; overflow-y: auto;">
+                            @foreach (var producto in productosDisponibles.Where(p => 
+                                string.IsNullOrEmpty(terminoBusquedaProducto) || 
+                                p.Nom_Pro.Contains(terminoBusquedaProducto, StringComparison.OrdinalIgnoreCase)))
+                            {
+                                var yaAgregado = facturaModel.Productos.Any(d => d.Codigo == producto.Id_Pro.ToString());
+                                <div class="col-md-6">
+                                    <button type="button" class="btn btn-outline-primary w-100 text-start" 
+                                            @onclick="() => AgregarProductoDelModal(producto)"
+                                            disabled="@yaAgregado">
+                                        <div>
+                                            <strong>@producto.Nom_Pro</strong>
+                                            @if (yaAgregado)
+                                            {
+                                                <span class="badge bg-success ms-2">Agregado</span>
+                                            }
+                                        </div>
+                                        <small>Stock: @producto.Can_Pro | Precio: @producto.Pre_Uni.ToString("C2")</small>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     // Modelo de la factura
     private FacturaModel facturaModel = new();
+    private List<ProductoDto> productosDisponibles = new();
+    private List<ClienteDto> clientesDisponibles = new();
+    
+    private string terminoBusquedaCliente = string.Empty;
+    private List<ClienteDto> clientesFiltradosTemp = new();
+    private ClienteDto? clienteSeleccionadoTemp;
+    private bool mostrarResultadosClientes = false;
+    
+    private bool mostrarSelectorProductos = false;
+    private bool enviando = false;
+    private string terminoBusquedaProducto = string.Empty;
+    private string mensaje = string.Empty;
+    private string tipoMensaje = "success";
 
-    // Métodos de acción principales
-    private void GuardarFactura()
+    protected override async Task OnInitializedAsync()
     {
-        // Simular guardado
-        Console.WriteLine("Guardando factura...");
+        await CargarProductos();
+        await CargarClientes();
     }
 
-    private void EnviarFactura()
+    private async Task CargarProductos()
     {
-        Console.WriteLine("Enviando factura...");
+        try
+        {
+            Console.WriteLine("📥 Cargando productos...");
+            productosDisponibles = await ProductoService.GetAllAsync();
+            Console.WriteLine($"📊 Productos cargados: {productosDisponibles.Count}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error al cargar productos: {ex.Message}");
+            MostrarMensaje($"Error al cargar productos: {ex.Message}", "danger");
+        }
+    }
+
+    private async Task CargarClientes()
+    {
+        try
+        {
+            Console.WriteLine("📥 Cargando clientes...");
+            clientesDisponibles = await ClienteService.GetAllAsync();
+            Console.WriteLine($"📊 Clientes cargados: {clientesDisponibles.Count}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error al cargar clientes: {ex.Message}");
+            MostrarMensaje($"Error al cargar clientes: {ex.Message}", "danger");
+        }
+    }
+
+    private void ActualizarBusquedaCliente()
+    {
+        if (string.IsNullOrWhiteSpace(terminoBusquedaCliente))
+        {
+            mostrarResultadosClientes = false;
+            clientesFiltradosTemp.Clear();
+            return;
+        }
+
+        clientesFiltradosTemp = clientesDisponibles
+            .Where(c => c.Nom_Cli.Contains(terminoBusquedaCliente, StringComparison.OrdinalIgnoreCase) ||
+                       c.Ape_Cli.Contains(terminoBusquedaCliente, StringComparison.OrdinalIgnoreCase) ||
+                       c.Ced_Cli.Contains(terminoBusquedaCliente))
+            .ToList();
+
+        mostrarResultadosClientes = clientesFiltradosTemp.Any();
+    }
+
+    private void SeleccionarClienteTemp(ClienteDto cliente)
+    {
+        clienteSeleccionadoTemp = cliente;
+        facturaModel.Cliente = cliente.Nom_Cli;
+        terminoBusquedaCliente = cliente.Nom_Cli;
+        mostrarResultadosClientes = false;
+        MostrarMensaje($"Cliente seleccionado: {cliente.Nom_Cli}", "success");
+    }
+
+    private void LimpiarClienteSeleccionado()
+    {
+        clienteSeleccionadoTemp = null;
+        terminoBusquedaCliente = string.Empty;
+        facturaModel.Cliente = string.Empty;
+        mostrarResultadosClientes = false;
+    }
+
+    private void AbrirSelectorProductos()
+    {
+        mostrarSelectorProductos = true;
+    }
+
+    private void CerrarSelectorProductos()
+    {
+        mostrarSelectorProductos = false;
+        terminoBusquedaProducto = string.Empty;
+    }
+
+    private void AgregarProductoDelModal(ProductoDto producto)
+    {
+        facturaModel.Productos.Add(new ProductoModel 
+        { 
+            Codigo = producto.Id_Pro.ToString(), 
+            Descripcion = producto.Nom_Pro, 
+            Cantidad = 1, 
+            Precio = producto.Pre_Uni 
+        });
+        RecalcularSubtotales();
+        CerrarSelectorProductos();
+        MostrarMensaje($"Producto '{producto.Nom_Pro}' agregado", "success");
+    }
+
+    private void EliminarProducto(int index)
+    {
+        facturaModel.Productos.RemoveAt(index);
+        RecalcularSubtotales();
+    }
+
+    private async Task GuardarFactura()
+    {
+        Console.WriteLine("💾 Guardando factura en base de datos...");
+        
+        try
+        {
+            if (!facturaModel.Productos.Any())
+            {
+                Console.WriteLine("❌ No hay productos");
+                MostrarMensaje("Debe agregar productos a la factura", "warning");
+                return;
+            }
+
+            if (clienteSeleccionadoTemp == null)
+            {
+                Console.WriteLine("❌ No hay cliente seleccionado");
+                MostrarMensaje("Debe seleccionar un cliente", "warning");
+                return;
+            }
+
+            Console.WriteLine($"✅ Cliente: {clienteSeleccionadoTemp.Nom_Cli}");
+            Console.WriteLine($"✅ Productos: {facturaModel.Productos.Count}");
+
+            enviando = true;
+
+            // Crear DTO de factura
+            var createFacturaDto = new CreateFacturaDto
+            {
+                Ced_Cli_Per = clienteSeleccionadoTemp.Ced_Cli,
+                Detalles = facturaModel.Productos.Select(p => new CreateDetalleFacturaDto
+                {
+                    Id_Pro_Per = int.Parse(p.Codigo),
+                    Can_Com = p.Cantidad
+                }).ToList()
+            };
+
+            Console.WriteLine($"📤 Enviando factura con {createFacturaDto.Detalles.Count} detalles");
+
+            var factura = await FacturaService.CreateAsync(createFacturaDto);
+            
+            MostrarMensaje($"✓ Factura #{factura.Id_Fac} guardada exitosamente. Total: {CalcularTotal().ToString("C2")}", "success");
+            
+            // Esperar un poco antes de limpiar
+            await Task.Delay(1500);
+            BorrarFactura();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error al guardar: {ex.Message}");
+            MostrarMensaje($"Error al guardar factura: {ex.Message}", "danger");
+        }
+        finally
+        {
+            enviando = false;
+        }
+    }
+
+    private async Task EnviarFactura()
+    {
+        try
+        {
+            if (!facturaModel.Productos.Any())
+            {
+                MostrarMensaje("Debe agregar productos a la factura", "warning");
+                return;
+            }
+
+            if (clienteSeleccionadoTemp == null)
+            {
+                MostrarMensaje("Debe seleccionar un cliente", "warning");
+                return;
+            }
+
+            enviando = true;
+
+            // Crear DTO de factura
+            var createFacturaDto = new CreateFacturaDto
+            {
+                Ced_Cli_Per = clienteSeleccionadoTemp.Ced_Cli,
+                Detalles = facturaModel.Productos.Select(p => new CreateDetalleFacturaDto
+                {
+                    Id_Pro_Per = int.Parse(p.Codigo),
+                    Can_Com = p.Cantidad
+                }).ToList()
+            };
+
+            var factura = await FacturaService.CreateAsync(createFacturaDto);
+            
+            MostrarMensaje($"✓ Factura #{factura.Id_Fac} creada exitosamente. Total: {CalcularTotal().ToString("C2")}", "success");
+            
+            await Task.Delay(1500);
+            BorrarFactura();
+        }
+        catch (Exception ex)
+        {
+            MostrarMensaje($"Error al enviar factura: {ex.Message}", "danger");
+        }
+        finally
+        {
+            enviando = false;
+        }
     }
 
     private void BorrarFactura()
     {
         Console.WriteLine("Borrando factura...");
         facturaModel = new FacturaModel();
-    }
-
-    // Métodos para agregar elementos
-    private void AgregarProducto()
-    {
-        Console.WriteLine("Agregando producto...");
-        // Ejemplo: agregar un producto de ejemplo para visualizar la UI
-        facturaModel.Productos.Add(new ProductoModel { Codigo = "P001", Descripcion = "Producto ejemplo", Cantidad = 1, Precio = 10.00m });
-        RecalcularSubtotales();
+        clienteSeleccionadoTemp = null;
+        terminoBusquedaCliente = string.Empty;
+        mostrarResultadosClientes = false;
+        MostrarMensaje("Factura borrada", "info");
     }
 
     private void AgregarFormaDePago()
@@ -286,23 +586,39 @@
         Console.WriteLine("Agregando información adicional...");
     }
 
-    private void BuscarCliente()
-    {
-        Console.WriteLine("Buscando cliente...");
-    }
-
-    // Recalcula subtotales simples (simulación)
     private void RecalcularSubtotales()
     {
+        var subtotal = facturaModel.Productos.Sum(p => p.Cantidad * p.Precio);
+        
         facturaModel.SubtotalBase0 = 0m;
-        facturaModel.SubtotalBaseIva = facturaModel.Productos.Sum(p => p.Cantidad * p.Precio);
+        facturaModel.SubtotalBaseIva = subtotal;
         facturaModel.SubtotalNoSujeto = 0m;
         facturaModel.SubtotalExento = 0m;
+        
+        StateHasChanged();
+    }
+
+    private decimal CalcularSubtotal()
+    {
+        return facturaModel.Productos.Sum(p => p.Cantidad * p.Precio);
+    }
+
+    private decimal CalcularIVA()
+    {
+        return CalcularSubtotal() * 0.15m;
     }
 
     private decimal CalcularTotal()
     {
-        return facturaModel.SubtotalBase0 + facturaModel.SubtotalBaseIva + facturaModel.SubtotalNoSujeto + facturaModel.SubtotalExento;
+        var subtotal = CalcularSubtotal();
+        var iva = CalcularIVA();
+        return subtotal + iva;
+    }
+
+    private void MostrarMensaje(string texto, string tipo = "success")
+    {
+        mensaje = texto;
+        tipoMensaje = tipo;
     }
 
     // Clase modelo para la factura
