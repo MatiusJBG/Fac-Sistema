@@ -1,0 +1,139 @@
+@page "/productos"
+@using Microsoft.AspNetCore.Components
+@using UI.Blazor.Cliente.Models
+@inject NavigationManager NavigationManager
+
+<PageTitle>Productos - Ecuafact</PageTitle>
+
+<div class="productos-container">
+    <div class="productos-header">
+        <h1 class="productos-title">Productos</h1>
+        <button class="btn btn-primary" @onclick="AbrirModalNuevoProducto">
+            <i class="bi bi-plus-lg me-2"></i>Nuevo Producto
+        </button>
+    </div>
+
+    <div class="productos-content">
+        @if (ListaProductos != null && ListaProductos.Any())
+        {
+            <div class="productos-table">
+                <div class="table-header">
+                    <div class="table-col id">ID</div>
+                    <div class="table-col tipo">Tipo</div>
+                    <div class="table-col nombre">Nombre</div>
+                    <div class="table-col fecha-exp">Fecha Exp.</div>
+                    <div class="table-col cantidad">Cantidad</div>
+                    <div class="table-col precio">Precio Unit.</div>
+                </div>
+                @foreach (var producto in ListaProductos)
+                {
+                    <div class="table-row">
+                        <div class="table-col id">@producto.Id_Pro</div>
+                        <div class="table-col tipo">@producto.Tip_Pro</div>
+                        <div class="table-col nombre">@producto.Nom_Pro</div>
+                        <div class="table-col fecha-exp">@producto.Fec_Exp_Pro.ToString("dd/MM/yyyy")</div>
+                        <div class="table-col cantidad">@producto.Can_Pro</div>
+                        <div class="table-col precio">$@producto.Pre_Uni.ToString("F2")</div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="no-productos">
+                <p>No hay productos registrados</p>
+            </div>
+        }
+    </div>
+
+    <!-- Modal Nuevo Producto -->
+    @if (MostrarModalNuevoProducto)
+    {
+        <div class="modal-overlay" @onclick="CerrarModalNuevoProducto">
+            <div class="modal-content" @onclick:stopPropagation="true">
+                <NuevoProducto @ref="NuevoProductoComponent" OnGuardar="GuardarProducto" OnCerrar="CerrarModalNuevoProducto" />
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    // Lista de productos simulados
+    private List<Producto> ListaProductos = new();
+
+    // Estado del modal
+    private bool MostrarModalNuevoProducto = false;
+
+    // Referencia al componente NuevoProducto
+    private NuevoProducto? NuevoProductoComponent;
+
+    // Modelo para nuevo producto
+    private Producto NuevoProductoModel = new();
+
+    // Event callbacks
+    private EventCallback<Producto> OnGuardar => EventCallback.Factory.Create<Producto>(this, GuardarProducto);
+    private EventCallback OnCerrar => EventCallback.Factory.Create(this, CerrarModalNuevoProducto);
+
+    protected override void OnInitialized()
+    {
+        CargarProductosEjemplo();
+    }
+
+    private void CargarProductosEjemplo()
+    {
+        ListaProductos = new List<Producto>
+        {
+            new Producto
+            {
+                Id_Pro = 1,
+                Tip_Pro = "Alimento",
+                Nom_Pro = "Arroz Premium",
+                Fec_Exp_Pro = DateTime.Now.AddMonths(6),
+                Can_Pro = 100,
+                Pre_Uni = 2.50m
+            },
+            new Producto
+            {
+                Id_Pro = 2,
+                Tip_Pro = "Bebida",
+                Nom_Pro = "Jugo de Naranja",
+                Fec_Exp_Pro = DateTime.Now.AddMonths(3),
+                Can_Pro = 50,
+                Pre_Uni = 1.75m
+            },
+            new Producto
+            {
+                Id_Pro = 3,
+                Tip_Pro = "Limpieza",
+                Nom_Pro = "Detergente Líquido",
+                Fec_Exp_Pro = DateTime.Now.AddYears(1),
+                Can_Pro = 25,
+                Pre_Uni = 3.25m
+            }
+        };
+    }
+
+    private void AbrirModalNuevoProducto()
+    {
+        NuevoProductoComponent?.ResetForm();
+        MostrarModalNuevoProducto = true;
+        StateHasChanged();
+    }
+
+    private void CerrarModalNuevoProducto()
+    {
+        MostrarModalNuevoProducto = false;
+        StateHasChanged();
+    }
+
+    private void GuardarProducto(Producto nuevoProducto)
+    {
+        // Asignar ID automático
+        nuevoProducto.Id_Pro = ListaProductos.Max(p => p.Id_Pro) + 1;
+
+        ListaProductos.Add(nuevoProducto);
+        CerrarModalNuevoProducto();
+    }
+
+
+}
