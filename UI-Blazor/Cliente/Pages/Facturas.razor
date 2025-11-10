@@ -1,0 +1,124 @@
+@page "/facturas"
+
+<PageTitle>Facturas - Ecuafact</PageTitle>
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Facturas Emitidas</h2>
+        <button class="btn btn-primary" @onclick="NavegarANuevaFactura">
+            <i class="bi bi-plus-lg me-2"></i>Nueva Factura
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Número</th>
+                            <th>Fecha</th>
+                            <th>Cliente</th>
+                            <th>Total</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (ListaFacturas != null && ListaFacturas.Any())
+                        {
+                            @foreach (var factura in ListaFacturas)
+                            {
+                                <tr>
+                                    <td>@factura.Numero</td>
+                                    <td>@factura.Fecha.ToString("dd/MM/yyyy")</td>
+                                    <td>@factura.Cliente</td>
+                                    <td>$ @factura.Total.ToString("F2")</td>
+                                    <td>
+                                        <span class="badge bg-success">@factura.Estado</span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary me-2" title="Ver">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="bi bi-receipt fs-1 d-block mb-2"></i>
+                                        No hay facturas emitidas
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    @inject NavigationManager NavigationManager
+
+    private List<FacturaResumen> ListaFacturas = new();
+
+    protected override void OnInitialized()
+    {
+        // Datos de ejemplo - Se reemplazarán con datos del backend
+        CargarFacturasEjemplo();
+    }
+
+    private void NavegarANuevaFactura()
+    {
+        NavigationManager.NavigateTo("/factura");
+    }
+
+    private void CargarFacturasEjemplo()
+    {
+        ListaFacturas = new List<FacturaResumen>
+        {
+            new FacturaResumen
+            {
+                Numero = "001-001-000000001",
+                Fecha = DateTime.Now.AddDays(-5),
+                Cliente = "DIFAR S.A.",
+                Total = 1250.50m,
+                Estado = "Emitida"
+            },
+            new FacturaResumen
+            {
+                Numero = "001-001-000000002",
+                Fecha = DateTime.Now.AddDays(-3),
+                Cliente = "CLARO",
+                Total = 89.99m,
+                Estado = "Emitida"
+            },
+            new FacturaResumen
+            {
+                Numero = "001-001-000000003",
+                Fecha = DateTime.Now.AddDays(-1),
+                Cliente = "MI COMISARIATO",
+                Total = 234.67m,
+                Estado = "Emitida"
+            }
+        };
+    }
+
+    public class FacturaResumen
+    {
+        public string Numero { get; set; } = string.Empty;
+        public DateTime Fecha { get; set; }
+        public string Cliente { get; set; } = string.Empty;
+        public decimal Total { get; set; }
+        public string Estado { get; set; } = string.Empty;
+    }
+}

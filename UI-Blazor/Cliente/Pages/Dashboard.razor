@@ -1,0 +1,479 @@
+@page "/dashboard"
+@using Microsoft.AspNetCore.Components
+@inject NavigationManager NavigationManager
+
+<PageTitle>Dashboard - Ecuafact</PageTitle>
+
+<div class="dashboard-container">
+    @if (mostrarDropdown)
+    {
+        <div class="dropdown-overlay" @onclick="CerrarDropdown"></div>
+    }
+    <!-- Header -->
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="header-left">
+                <button class="hamburger-btn" @onclick="ToggleSidebar" title="Menú">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+                <h1 class="logo">Facturatex</h1>
+            </div>
+            <div class="header-center">
+                <span class="breadcrumb">Inicio</span>
+                <span class="user-info">
+                    <span class="status-dot"></span>
+                    <span class="user-details">0927205284001 - MARIA BEATRIZ ZAVALA INTRIAGO</span>
+                </span>
+            </div>
+            <div class="header-right">
+                <div class="user-greeting">
+                    <span class="greeting-icon">✓</span>
+                    <span>Hola, @UsuarioNombre</span>
+                </div>
+                <button class="btn btn-primary me-3" @onclick="NavegarAFactura">
+                    <i class="bi bi-plus-lg me-1"></i>Nueva Factura
+                </button>
+
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="dashboard-main">
+        <!-- Sidebar -->
+        <aside class="dashboard-sidebar @((sidebarCollapsed ? "collapsed" : ""))">
+            <nav class="sidebar-nav">
+                <a href="/retenciones" class="nav-item">
+                    <span class="nav-icon"><i class="bi bi-receipt"></i></span>
+                    <span class="nav-text">Comprobantes de Retención</span>
+                </a>
+                <a href="/clientes" class="nav-item">
+                    <span class="nav-icon"><i class="bi bi-people"></i></span>
+                    <span class="nav-text">Clientes</span>
+                </a>
+                <a href="/productos" class="nav-item">
+                    <span class="nav-icon"><i class="bi bi-box"></i></span>
+                    <span class="nav-text">Productos</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Content Area -->
+        <main class="dashboard-content">
+            <!-- Últimos Documentos Recibidos -->
+            <section class="section-documentos">
+                <h2 class="section-title">Últimos documentos recibidos</h2>
+                <div class="documentos-grid">
+                    @if (UltimosDocumentos != null && UltimosDocumentos.Any())
+                    {
+                        @foreach (var documento in UltimosDocumentos)
+                        {
+                            <div class="documento-card">
+                                <div class="documento-header">
+                                    <div class="documento-icon" style="background-color: @documento.ColorIcono;">
+                                        <span>@documento.Icono</span>
+                                    </div>
+                                    <div class="documento-empresa">@documento.Empresa</div>
+                                    <div class="documento-monto">$ @documento.Monto.ToString("F2")</div>
+                                </div>
+                                <div class="documento-footer">
+                                    <div class="documento-tipo">
+                                        <span>@documento.TipoDocumento</span>
+                                        <span class="documento-numero">No. @documento.Numero</span>
+                                    </div>
+                                    <div class="documento-fecha">@documento.Fecha.ToString("dd/MM/yyyy")</div>
+                                </div>
+                                <div class="documento-wave"></div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="no-documentos">
+                            <p>No hay documentos recientes</p>
+                        </div>
+                    }
+                </div>
+            </section>
+
+            <!-- Tarjetas de Resumen -->
+            <section class="section-resumen">
+                <div class="resumen-grid">
+                    <div class="resumen-card card-comprobantes">
+                        <div class="resumen-icon">✉️</div>
+                        <div class="resumen-content">
+                            <h3 class="resumen-title">Comprobantes Recibidos</h3>
+                            <p class="resumen-count">@ComprobantesRecibidos Documentos</p>
+                        </div>
+                    </div>
+                    <div class="resumen-card card-borradores">
+                        <div class="resumen-icon">✏️</div>
+                        <div class="resumen-content">
+                            <h3 class="resumen-title">Borradores</h3>
+                            <p class="resumen-count">@Borradores Documentos</p>
+                        </div>
+                    </div>
+                    <div class="resumen-card card-facturas" @onclick="NavegarAFacturas" style="cursor: pointer;">
+                        <div class="resumen-icon">📄</div>
+                        <div class="resumen-content">
+                            <h3 class="resumen-title">Facturas</h3>
+                            <p class="resumen-count">@FacturasEmitidas Emitidas</p>
+                        </div>
+                    </div>
+                    <div class="resumen-card card-notas">
+                        <div class="resumen-icon">📝</div>
+                        <div class="resumen-content">
+                            <h3 class="resumen-title">Notas de Crédito</h3>
+                            <p class="resumen-count">@NotasCreditoEmitidas Emitidas</p>
+                        </div>
+                    </div>
+                    <div class="resumen-card card-retenciones">
+                        <div class="resumen-icon">📦</div>
+                        <div class="resumen-content">
+                            <h3 class="resumen-title">Retenciones</h3>
+                            <p class="resumen-count">@RetencionesEmitidas Emitidas</p>
+                        </div>
+                    </div>
+                    <div class="resumen-card card-guias">
+                        <div class="resumen-icon">🚚</div>
+                        <div class="resumen-content">
+                            <h3 class="resumen-title">Guías de Remisión</h3>
+                            <p class="resumen-count">@GuiasRemisionEmitidas Emitidos</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Presupuesto -->
+            <section class="section-presupuesto">
+                <h2 class="section-title">PRESUPUESTO @MesPresupuesto @AnioPresupuesto</h2>
+                <div class="presupuesto-table">
+                    <div class="presupuesto-header">
+                        <div class="presupuesto-col categoria-col">Categoría</div>
+                        <div class="presupuesto-col porcentaje-col">%</div>
+                        <div class="presupuesto-col actual-col">Actual</div>
+                        <div class="presupuesto-col estado-col">Estado</div>
+                        <div class="presupuesto-col presupuestado-col">Presupuestado</div>
+                    </div>
+                    @if (CategoriasPresupuesto != null && CategoriasPresupuesto.Any())
+                    {
+                        @foreach (var categoria in CategoriasPresupuesto)
+                        {
+                            <div class="presupuesto-row">
+                                <div class="presupuesto-col categoria-col">
+                                    <span class="categoria-icon">@categoria.Icono</span>
+                                    <span class="categoria-nombre">@categoria.Nombre</span>
+                                </div>
+                                <div class="presupuesto-col porcentaje-col">
+                                    <span>@categoria.Porcentaje.ToString("F2")%</span>
+                                </div>
+                                <div class="presupuesto-col actual-col">
+                                    <span>$ @categoria.MontoActual.ToString("F2")</span>
+                                </div>
+                                <div class="presupuesto-col estado-col">
+                                    <span class="estado-text">@categoria.Estado</span>
+                                </div>
+                                <div class="presupuesto-col presupuestado-col">
+                                    <span>$ @categoria.MontoPresupuestado.ToString("F2")</span>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="dashboard-footer">
+        <div class="footer-content">
+            <div class="footer-left">
+                <span>2019 © Ecuanexus-IT</span>
+            </div>
+            <div class="footer-right">
+                <a href="#" class="footer-link">Privacidad</a>
+                <a href="#" class="footer-link">Soporte</a>
+                <a href="#" class="footer-link">Contáctenos</a>
+            </div>
+        </div>
+        <button class="btn-ayuda" title="Ayuda">
+            <span>?</span>
+        </button>
+    </footer>
+</div>
+
+@code {
+    // Estado del dropdown
+    private bool mostrarDropdown = false;
+
+    // Estado del sidebar
+    private bool sidebarCollapsed = false;
+
+    // Datos del usuario
+    private string UsuarioNombre = "Maria M";
+
+    // Resumen de documentos
+    private int ComprobantesRecibidos = 138;
+    private int Borradores = 0;
+    private int FacturasEmitidas = 26;
+    private int NotasCreditoEmitidas = 1;
+    private int RetencionesEmitidas = 0;
+    private int GuiasRemisionEmitidas = 0;
+
+    // Presupuesto
+    private string MesPresupuesto = "SEPTIEMBRE";
+    private int AnioPresupuesto = 2021;
+
+    // Modelos de datos
+    private List<DocumentoRecibido> UltimosDocumentos = new();
+    private List<CategoriaPresupuesto> CategoriasPresupuesto = new();
+
+    protected override void OnInitialized()
+    {
+        // Datos de ejemplo - Se reemplazarán con datos del backend
+        CargarDocumentosEjemplo();
+        CargarPresupuestoEjemplo();
+    }
+
+    // Métodos para el dropdown
+    private void ToggleDropdown()
+    {
+        mostrarDropdown = !mostrarDropdown;
+        StateHasChanged();
+    }
+
+    private void CerrarDropdown()
+    {
+        mostrarDropdown = false;
+        StateHasChanged();
+    }
+
+    private void ToggleSidebar()
+    {
+        sidebarCollapsed = !sidebarCollapsed;
+        StateHasChanged();
+    }
+
+
+    // Métodos de navegación
+    private void NavegarAFactura()
+    {
+        mostrarDropdown = false;
+        NavigationManager.NavigateTo("/factura");
+    }
+
+    private void NavegarANotaCredito()
+    {
+        mostrarDropdown = false;
+        StateHasChanged();
+        // NavigationManager.NavigateTo("/nota-credito");
+    }
+
+    private void NavegarARetencion()
+    {
+        mostrarDropdown = false;
+        StateHasChanged();
+        // NavigationManager.NavigateTo("/retencion");
+    }
+
+    private void NavegarAGuiaRemision()
+    {
+        mostrarDropdown = false;
+        StateHasChanged();
+        // NavigationManager.NavigateTo("/guia-remision");
+    }
+
+    private void NavegarALiquidacion()
+    {
+        mostrarDropdown = false;
+        StateHasChanged();
+        // NavigationManager.NavigateTo("/liquidacion-compras");
+    }
+
+    private void NavegarAClientes()
+    {
+        mostrarDropdown = false;
+        StateHasChanged();
+        // NavigationManager.NavigateTo("/clientes");
+    }
+
+    private void NavegarAProducto()
+    {
+        mostrarDropdown = false;
+        StateHasChanged();
+        // NavigationManager.NavigateTo("/producto");
+    }
+
+    private void NavegarAConfigurarEmision()
+    {
+        mostrarDropdown = false;
+        StateHasChanged();
+        // NavigationManager.NavigateTo("/configurar-emision");
+    }
+
+    private void NavegarAFacturas()
+    {
+        NavigationManager.NavigateTo("/facturas");
+    }
+
+    private void CargarDocumentosEjemplo()
+    {
+        UltimosDocumentos = new List<DocumentoRecibido>
+        {
+            new DocumentoRecibido
+            {
+                Empresa = "DIFAR S.A.",
+                Monto = 5.51m,
+                TipoDocumento = "FACTURA",
+                Numero = "066-021-000297906",
+                Fecha = new DateTime(2021, 8, 28),
+                Icono = "🏠",
+                ColorIcono = "#E3F2FD"
+            },
+            new DocumentoRecibido
+            {
+                Empresa = "CLARO",
+                Monto = 25.99m,
+                TipoDocumento = "FACTURA",
+                Numero = "001-001-000123456",
+                Fecha = new DateTime(2021, 8, 27),
+                Icono = "📱",
+                ColorIcono = "#E8F5E9"
+            },
+            new DocumentoRecibido
+            {
+                Empresa = "MI COMISARIATO",
+                Monto = 45.67m,
+                TipoDocumento = "FACTURA",
+                Numero = "001-002-000789012",
+                Fecha = new DateTime(2021, 8, 26),
+                Icono = "🛒",
+                ColorIcono = "#FFF3E0"
+            },
+            new DocumentoRecibido
+            {
+                Empresa = "SWEET & COFFEE",
+                Monto = 8.50m,
+                TipoDocumento = "FACTURA",
+                Numero = "001-003-000345678",
+                Fecha = new DateTime(2021, 8, 25),
+                Icono = "☕",
+                ColorIcono = "#FFFDE7"
+            },
+            new DocumentoRecibido
+            {
+                Empresa = "KITTON",
+                Monto = 120.00m,
+                TipoDocumento = "FACTURA",
+                Numero = "001-004-000901234",
+                Fecha = new DateTime(2021, 8, 24),
+                Icono = "🏠",
+                ColorIcono = "#E8F5E9"
+            }
+        };
+    }
+
+    private void CargarPresupuestoEjemplo()
+    {
+        CategoriasPresupuesto = new List<CategoriaPresupuesto>
+        {
+            new CategoriaPresupuesto
+            {
+                Nombre = "Sin Clasificar",
+                Icono = "🚫",
+                Porcentaje = 0.00m,
+                MontoActual = 57.20m,
+                MontoPresupuestado = 0.00m,
+                Estado = "No Configurado"
+            },
+            new CategoriaPresupuesto
+            {
+                Nombre = "Vivienda",
+                Icono = "🏠",
+                Porcentaje = 0.00m,
+                MontoActual = 37.45m,
+                MontoPresupuestado = 0.00m,
+                Estado = "No Configurado"
+            },
+            new CategoriaPresupuesto
+            {
+                Nombre = "Educación",
+                Icono = "🎓",
+                Porcentaje = 0.00m,
+                MontoActual = 0.00m,
+                MontoPresupuestado = 0.00m,
+                Estado = "No Configurado"
+            },
+            new CategoriaPresupuesto
+            {
+                Nombre = "Alimentación",
+                Icono = "🍴",
+                Porcentaje = 0.00m,
+                MontoActual = 12.20m,
+                MontoPresupuestado = 0.00m,
+                Estado = "No Configurado"
+            },
+            new CategoriaPresupuesto
+            {
+                Nombre = "Vestimenta",
+                Icono = "👕",
+                Porcentaje = 0.00m,
+                MontoActual = 0.00m,
+                MontoPresupuestado = 0.00m,
+                Estado = "No Configurado"
+            },
+            new CategoriaPresupuesto
+            {
+                Nombre = "Salud",
+                Icono = "🏥",
+                Porcentaje = 0.00m,
+                MontoActual = 1.99m,
+                MontoPresupuestado = 0.00m,
+                Estado = "No Configurado"
+            },
+            new CategoriaPresupuesto
+            {
+                Nombre = "Arte y Cultura",
+                Icono = "🎨",
+                Porcentaje = 0.00m,
+                MontoActual = 0.00m,
+                MontoPresupuestado = 0.00m,
+                Estado = "No Configurado"
+            },
+            new CategoriaPresupuesto
+            {
+                Nombre = "Turismo",
+                Icono = "✈️",
+                Porcentaje = 0.00m,
+                MontoActual = 0.00m,
+                MontoPresupuestado = 0.00m,
+                Estado = "No Configurado"
+            }
+        };
+    }
+
+    // Clases de modelos - Se pueden mover a archivos separados más adelante
+    public class DocumentoRecibido
+    {
+        public string Empresa { get; set; } = string.Empty;
+        public decimal Monto { get; set; }
+        public string TipoDocumento { get; set; } = string.Empty;
+        public string Numero { get; set; } = string.Empty;
+        public DateTime Fecha { get; set; }
+        public string Icono { get; set; } = string.Empty;
+        public string ColorIcono { get; set; } = string.Empty;
+    }
+
+    public class CategoriaPresupuesto
+    {
+        public string Nombre { get; set; } = string.Empty;
+        public string Icono { get; set; } = string.Empty;
+        public decimal Porcentaje { get; set; }
+        public decimal MontoActual { get; set; }
+        public decimal MontoPresupuestado { get; set; }
+        public string Estado { get; set; } = string.Empty;
+    }
+}
+

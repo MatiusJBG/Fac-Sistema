@@ -1,0 +1,213 @@
+@page "/clientes"
+@using Microsoft.AspNetCore.Components
+@inject NavigationManager NavigationManager
+
+<PageTitle>Clientes - Ecuafact</PageTitle>
+
+<div class="clientes-container">
+    <div class="clientes-header">
+        <h1 class="clientes-title">Clientes</h1>
+        <button class="btn btn-primary" @onclick="AbrirModalNuevoCliente">
+            <i class="bi bi-plus-lg me-2"></i>Nuevo Cliente
+        </button>
+    </div>
+
+    <div class="clientes-content">
+        @if (ListaClientes != null && ListaClientes.Any())
+        {
+            <div class="clientes-table">
+                <div class="table-header">
+                    <div class="table-col nombre-comercial">Nombre Comercial</div>
+                    <div class="table-col identificacion">RUC/Cédula</div>
+                    <div class="table-col correo">Correo</div>
+                    <div class="table-col estado">Estado</div>
+                </div>
+                @foreach (var cliente in ListaClientes)
+                {
+                    <div class="table-row">
+                        <div class="table-col nombre-comercial">@cliente.NombreComercial</div>
+                        <div class="table-col identificacion">@cliente.Identificacion</div>
+                        <div class="table-col correo">@cliente.CorreoElectronico</div>
+                        <div class="table-col estado">
+                            <span class="estado-badge @(cliente.Habilitado ? "habilitado" : "deshabilitado")">
+                                @(cliente.Habilitado ? "Habilitado" : "No Habilitado")
+                            </span>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="no-clientes">
+                <p>No hay clientes registrados</p>
+            </div>
+        }
+    </div>
+
+    <!-- Modal Nuevo Cliente -->
+    @if (MostrarModalNuevoCliente)
+    {
+        <div class="modal-overlay" @onclick="CerrarModalNuevoCliente">
+            <div class="modal-content" @onclick:stopPropagation="true">
+                <div class="modal-header">
+                    <h2 class="modal-title">Nuevo Cliente</h2>
+                    <button class="btn-guardar" @onclick="GuardarCliente">
+                        <i class="bi bi-check-lg me-1"></i>Guardar
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="@NuevoCliente" OnValidSubmit="GuardarCliente">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="form-group">
+                            <label for="cedCli">Cédula *</label>
+                            <InputText id="cedCli" @bind-Value="NuevoCliente.CedCli" class="form-control" placeholder="Ingrese la cédula del cliente" required />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="nomCli">Nombre</label>
+                            <InputText id="nomCli" @bind-Value="NuevoCliente.NomCli" class="form-control" placeholder="Ingrese el nombre del cliente" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="apeCli">Apellido</label>
+                            <InputText id="apeCli" @bind-Value="NuevoCliente.ApeCli" class="form-control" placeholder="Ingrese el apellido del cliente" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="rucCli">RUC</label>
+                            <InputText id="rucCli" @bind-Value="NuevoCliente.RucCli" class="form-control" placeholder="Ingrese el RUC del cliente" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="dirCli">Dirección</label>
+                            <InputText id="dirCli" @bind-Value="NuevoCliente.DirCli" class="form-control" placeholder="Ingrese la dirección del cliente" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="corCli">Correo Electrónico</label>
+                            <InputText id="corCli" @bind-Value="NuevoCliente.CorCli" type="email" class="form-control" placeholder="cliente@ejemplo.com" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="telCli">Teléfono</label>
+                            <InputText id="telCli" @bind-Value="NuevoCliente.TelCli" type="tel" class="form-control" placeholder="0991234567" />
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    // Lista de clientes simulados
+    private List<Cliente> ListaClientes = new();
+
+    // Estado del modal
+    private bool MostrarModalNuevoCliente = false;
+
+    // Modelo para nuevo cliente
+    private Cliente NuevoCliente = new();
+
+    protected override void OnInitialized()
+    {
+        CargarClientesEjemplo();
+    }
+
+    private void CargarClientesEjemplo()
+    {
+        ListaClientes = new List<Cliente>
+        {
+            new Cliente
+            {
+                CedCli = "",
+                NomCli = "Empresa",
+                ApeCli = "Ejemplo S.A.",
+                RucCli = "1790012345001",
+                DirCli = "Av. Principal 123, Quito",
+                CorCli = "contacto@empresa.com",
+                TelCli = "0991234567",
+                Habilitado = true
+            },
+            new Cliente
+            {
+                CedCli = "0912345678",
+                NomCli = "Juan",
+                ApeCli = "Pérez",
+                RucCli = "",
+                DirCli = "Calle Secundaria 456, Guayaquil",
+                CorCli = "juan.perez@email.com",
+                TelCli = "0987654321",
+                Habilitado = false
+            },
+            new Cliente
+            {
+                CedCli = "",
+                NomCli = "Ana",
+                ApeCli = "García",
+                RucCli = "",
+                DirCli = "Plaza Central 789, Cuenca",
+                CorCli = "ana.garcia@email.com",
+                TelCli = "0976543210",
+                Habilitado = true
+            }
+        };
+    }
+
+    private void AbrirModalNuevoCliente()
+    {
+        NuevoCliente = new Cliente();
+        MostrarModalNuevoCliente = true;
+        StateHasChanged();
+    }
+
+    private void CerrarModalNuevoCliente()
+    {
+        MostrarModalNuevoCliente = false;
+        StateHasChanged();
+    }
+
+    private void GuardarCliente()
+    {
+        if (!string.IsNullOrWhiteSpace(NuevoCliente.CedCli))
+        {
+            ListaClientes.Add(new Cliente
+            {
+                CedCli = NuevoCliente.CedCli,
+                NomCli = NuevoCliente.NomCli,
+                ApeCli = NuevoCliente.ApeCli,
+                RucCli = NuevoCliente.RucCli,
+                DirCli = NuevoCliente.DirCli,
+                CorCli = NuevoCliente.CorCli,
+                TelCli = NuevoCliente.TelCli,
+                Habilitado = true
+            });
+            CerrarModalNuevoCliente();
+        }
+    }
+
+    // Clase de modelo basada en la tabla de BD
+    public class Cliente
+    {
+        public string CedCli { get; set; } = string.Empty; // Clave primaria
+        public string NomCli { get; set; } = string.Empty;
+        public string ApeCli { get; set; } = string.Empty;
+        public string RucCli { get; set; } = string.Empty;
+        public string DirCli { get; set; } = string.Empty;
+        public string CorCli { get; set; } = string.Empty;
+        public string TelCli { get; set; } = string.Empty;
+
+        // Propiedades calculadas para compatibilidad con la vista anterior
+        public string TipoIdentificacion => !string.IsNullOrEmpty(RucCli) ? "RUC" : "CÉDULA";
+        public string Identificacion => !string.IsNullOrEmpty(RucCli) ? RucCli : CedCli;
+        public string RazonSocial => $"{NomCli} {ApeCli}".Trim();
+        public string NombreComercial => RazonSocial;
+        public string Direccion => DirCli;
+        public string CorreoElectronico => CorCli;
+        public string Telefono => TelCli;
+        public bool Habilitado { get; set; } = true;
+    }
+}
