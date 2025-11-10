@@ -1,8 +1,8 @@
 /* Productos Container */
 .productos-container {
     min-height: 100vh;
-    background-color: #121212;
-    color: #E0E0E0;
+    background-color: #efefef;
+    color: #000000;
     padding: 2rem;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
@@ -14,13 +14,13 @@
     align-items: center;
     margin-bottom: 2rem;
     padding-bottom: 1rem;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid #bebebe;
 }
 
 .productos-title {
     font-size: 2rem;
     font-weight: 600;
-    color: #FFFFFF;
+    color: #000000;
     margin: 0;
 }
 
@@ -39,22 +39,22 @@
 }
 
 .btn-primary {
-    background-color: #4FC3F7;
-    color: #121212;
+    background-color: #0d6efd;
+    color: #ffffff;
 }
 
 .btn-primary:hover {
-    background-color: #29B6F6;
+    background-color: #1E3A8A;
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(79, 195, 247, 0.3);
 }
 
 /* Content */
 .productos-content {
-    background-color: #1E1E1E;
+    background-color: #ffffff;
     border-radius: 12px;
     padding: 1.5rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px rgba(42, 42, 42, 0.1);
 }
 
 /* Table */
@@ -72,10 +72,10 @@
 }
 
 .table-header {
-    background-color: #2A2A2A;
+    background-color: #c9ddfa;
     border-radius: 8px;
     font-weight: 600;
-    color: #B0B0B0;
+    color: #000000;
     font-size: 0.85rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -87,7 +87,7 @@
 }
 
 .table-row:hover {
-    background-color: #252525;
+    background-color: #efefef;
 }
 
 .table-row:last-child {
@@ -103,12 +103,12 @@
 
 .table-col.id {
     font-weight: 600;
-    color: #4FC3F7;
+    color: #1E3A8A;
 }
 
 .table-col.nombre {
     font-weight: 500;
-    color: #FFFFFF;
+    color: #000000;
 }
 
 .table-col.precio {
@@ -120,7 +120,7 @@
 .no-productos {
     text-align: center;
     padding: 3rem;
-    color: #888;
+    color: #1d1d1d;
 }
 
 .no-productos p {
@@ -135,7 +135,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(85, 85, 85, 0.7);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -144,9 +144,9 @@
 }
 
 .modal-content {
-    background-color: #1E1E1E;
+    background-color: #d2d2d2;
     border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 25px rgba(240, 240, 240, 0.3);
     max-width: 500px;
     width: 90%;
     max-height: 90vh;
