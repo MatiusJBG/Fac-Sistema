@@ -1,5 +1,8 @@
 @page "/clientes"
 @using Microsoft.AspNetCore.Components
+@using Application.DTOs
+@using Cliente.Services
+@inject IClienteService ClienteService
 @inject NavigationManager NavigationManager
 
 <PageTitle>Clientes - Ecuafact</PageTitle>
@@ -103,58 +106,47 @@
 </div>
 
 @code {
-    // Lista de clientes simulados
     private List<Cliente> ListaClientes = new();
-
-    // Estado del modal
     private bool MostrarModalNuevoCliente = false;
-
-    // Modelo para nuevo cliente
     private Cliente NuevoCliente = new();
+    private bool cargando = false;
+    private bool enviando = false;
+    private string mensaje = string.Empty;
+    private string tipoMensaje = "success";
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        CargarClientesEjemplo();
+        await CargarClientes();
     }
 
-    private void CargarClientesEjemplo()
+    private async Task CargarClientes()
     {
-        ListaClientes = new List<Cliente>
+        try
         {
-            new Cliente
+            cargando = true;
+            var clientesDto = await ClienteService.GetAllAsync();
+            
+            // Convertir ClienteDto a Cliente local
+            ListaClientes = clientesDto.Select(c => new Cliente
             {
-                CedCli = "",
-                NomCli = "Empresa",
-                ApeCli = "Ejemplo S.A.",
-                RucCli = "1790012345001",
-                DirCli = "Av. Principal 123, Quito",
-                CorCli = "contacto@empresa.com",
-                TelCli = "0991234567",
+                CedCli = c.Ced_Cli,
+                NomCli = c.Nom_Cli,
+                ApeCli = c.Ape_Cli,
+                RucCli = c.Ruc_Cli,
+                DirCli = c.Dir_Cli,
+                CorCli = c.Cor_Cli,
+                TelCli = c.Tel_Cli,
                 Habilitado = true
-            },
-            new Cliente
-            {
-                CedCli = "0912345678",
-                NomCli = "Juan",
-                ApeCli = "Pérez",
-                RucCli = "",
-                DirCli = "Calle Secundaria 456, Guayaquil",
-                CorCli = "juan.perez@email.com",
-                TelCli = "0987654321",
-                Habilitado = false
-            },
-            new Cliente
-            {
-                CedCli = "",
-                NomCli = "Ana",
-                ApeCli = "García",
-                RucCli = "",
-                DirCli = "Plaza Central 789, Cuenca",
-                CorCli = "ana.garcia@email.com",
-                TelCli = "0976543210",
-                Habilitado = true
-            }
-        };
+            }).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar clientes: {ex.Message}");
+        }
+        finally
+        {
+            cargando = false;
+        }
     }
 
     private void AbrirModalNuevoCliente()
@@ -170,29 +162,45 @@
         StateHasChanged();
     }
 
-    private void GuardarCliente()
+    private async Task GuardarCliente()
     {
         if (!string.IsNullOrWhiteSpace(NuevoCliente.CedCli))
         {
-            ListaClientes.Add(new Cliente
+            try
             {
-                CedCli = NuevoCliente.CedCli,
-                NomCli = NuevoCliente.NomCli,
-                ApeCli = NuevoCliente.ApeCli,
-                RucCli = NuevoCliente.RucCli,
-                DirCli = NuevoCliente.DirCli,
-                CorCli = NuevoCliente.CorCli,
-                TelCli = NuevoCliente.TelCli,
-                Habilitado = true
-            });
-            CerrarModalNuevoCliente();
+                enviando = true;
+                
+                // Convertir de Cliente a CreateClienteDto
+                var createDto = new CreateClienteDto
+                {
+                    Ced_Cli = NuevoCliente.CedCli,
+                    Nom_Cli = NuevoCliente.NomCli,
+                    Ape_Cli = NuevoCliente.ApeCli,
+                    Ruc_Cli = NuevoCliente.RucCli,
+                    Dir_Cli = NuevoCliente.DirCli,
+                    Cor_Cli = NuevoCliente.CorCli,
+                    Tel_Cli = NuevoCliente.TelCli
+                };
+                
+                await ClienteService.CreateAsync(createDto);
+                await CargarClientes();
+                CerrarModalNuevoCliente();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al guardar cliente: {ex.Message}");
+            }
+            finally
+            {
+                enviando = false;
+            }
         }
     }
 
-    // Clase de modelo basada en la tabla de BD
+    // Clase modelo basada en la tabla de BD
     public class Cliente
     {
-        public string CedCli { get; set; } = string.Empty; // Clave primaria
+        public string CedCli { get; set; } = string.Empty;
         public string NomCli { get; set; } = string.Empty;
         public string ApeCli { get; set; } = string.Empty;
         public string RucCli { get; set; } = string.Empty;
@@ -200,7 +208,7 @@
         public string CorCli { get; set; } = string.Empty;
         public string TelCli { get; set; } = string.Empty;
 
-        // Propiedades calculadas para compatibilidad con la vista anterior
+        // Propiedades calculadas para compatibilidad con la vista
         public string TipoIdentificacion => !string.IsNullOrEmpty(RucCli) ? "RUC" : "CÉDULA";
         public string Identificacion => !string.IsNullOrEmpty(RucCli) ? RucCli : CedCli;
         public string RazonSocial => $"{NomCli} {ApeCli}".Trim();
