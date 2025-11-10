@@ -1,9 +1,9 @@
 /* Nuevo Producto Modal */
 .nuevo-producto-modal {
-    background-color: #1E1E1E;
+    background-color: #ececec;
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 25px rgba(57, 57, 57, 0.3);
 }
 
 /* Modal Header */
@@ -12,14 +12,14 @@
     justify-content: space-between;
     align-items: center;
     padding: 1.5rem;
-    background-color: #2A2A2A;
-    border-bottom: 1px solid #333;
+    background-color: #c1c1c1;
+    border-bottom: 1px solid #a0a0a0;
 }
 
 .modal-title {
     font-size: 1.5rem;
     font-weight: 600;
-    color: #FFFFFF;
+    color: #000000;
     margin: 0;
 }
 
@@ -27,8 +27,8 @@
     display: inline-flex;
     align-items: center;
     padding: 0.5rem 1rem;
-    background-color: #4FC3F7;
-    color: #121212;
+    background-color: #0d6efd;
+    color: #ffffff;
     border: none;
     border-radius: 6px;
     font-size: 0.9rem;
@@ -38,9 +38,9 @@
 }
 
 .btn-guardar:hover {
-    background-color: #29B6F6;
+    background-color: #1E3A8A;
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(79, 195, 247, 0.3);
+    box-shadow: 0 4px 8px rgba(110, 79, 247, 0.3);
 }
 
 /* Modal Body */
@@ -57,7 +57,7 @@
     display: block;
     margin-bottom: 0.5rem;
     font-weight: 500;
-    color: #E0E0E0;
+    color: #f1f1f1;
     font-size: 0.9rem;
 }
 
@@ -65,8 +65,8 @@
 .form-control {
     width: 100%;
     padding: 0.75rem;
-    background-color: #2A2A2A;
-    border: 2px solid #333;
+    background-color: #cccccc;
+    border: 2px solid #cccccc;
     border-radius: 8px;
     color: #FFFFFF;
     font-size: 0.9rem;
