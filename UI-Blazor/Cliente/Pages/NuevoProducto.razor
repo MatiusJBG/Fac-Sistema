@@ -45,6 +45,9 @@
     </div>
 </div>
 
+
+@using Application.DTOs
+
 @using UI.Blazor.Cliente.Models
 
 @code {
@@ -74,7 +77,10 @@
 
     public void ResetForm()
     {
-        NuevoProductoModel = new Producto();
+        NuevoProductoModel = new Producto
+        {
+            Fec_Exp_Pro = DateTime.Now.AddMonths(6) // Valor por defecto
+        };
         StateHasChanged();
     }
 }
